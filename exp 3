@@ -1,0 +1,33 @@
+def SJF(processes):
+    # sort processes by burst time
+    processes = sorted(processes, key=lambda x: x[1])
+    n = len(processes)
+
+    # initialize waiting time and turnaround time arrays with 0's
+    wt = [0] * n
+    tat = [0] * n
+
+    # calculate waiting time and turnaround time for each process
+    for i in range(n):
+        # waiting time for current process is sum of burst times of all previous processes
+        wt[i] = sum([processes[j][1] for j in range(i)])
+        # turnaround time for current process is sum of burst time and waiting time
+        tat[i] = wt[i] + processes[i][1]
+
+    # calculate average waiting time and average turnaround time
+    avg_wt = sum(wt) / n
+    avg_tat = sum(tat) / n
+
+    return (avg_wt, avg_tat)
+
+
+if _name_ == "_main_":
+    # define the processes
+    processes = [("P1", 6), ("P2", 8), ("P3", 7), ("P4", 3)]
+
+    # calculate the average waiting time and average turnaround time using SJF scheduling
+    avg_wt, avg_tat = SJF(processes)
+
+    # print the results
+    print("Average Waiting Time:", avg_wt)
+    print("Average Turnaround Time:", avg_tat)
