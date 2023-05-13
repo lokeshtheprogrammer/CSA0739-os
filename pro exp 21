@@ -1,0 +1,44 @@
+#include<stdio.h>
+
+int main() {
+    int partitions[] = {300, 600, 350, 200, 750, 125};  // memory partitions
+    int n = sizeof(partitions) / sizeof(partitions[0]);  // number of partitions
+    int processes[] = {115, 500, 358, 200, 375};  // processes to be allocated
+    int m = sizeof(processes) / sizeof(processes[0]);  // number of processes
+
+    int allocated[m];  // array to store allocated partition indexes
+
+    // initialize allocated array with -1
+    for (int i = 0; i < m; i++) {
+        allocated[i] = -1;
+    }
+
+    // allocate memory blocks using worst-fit algorithm
+    for (int i = 0; i < m; i++) {
+        int index = -1;
+        for (int j = 0; j < n; j++) {
+            if (partitions[j] >= processes[i]) {
+                if (index == -1 || partitions[j] > partitions[index]) {
+                    index = j;
+                }
+            }
+        }
+        if (index != -1) {
+            allocated[i] = index;
+            partitions[index] -= processes[i];
+        }
+    }
+
+    // print allocation table
+    printf("Process No.\tProcess Size\tAllocated Partition\n");
+    for (int i = 0; i < m; i++) {
+        printf("%d\t\t%d KB\t\t", i+1, processes[i]);
+        if (allocated[i] != -1) {
+            printf("%d\n", allocated[i]+1);
+        } else {
+            printf("Not Allocated\n");
+        }
+    }
+
+    return 0;
+}
