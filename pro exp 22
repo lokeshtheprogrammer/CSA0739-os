@@ -1,0 +1,101 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_USERS 10
+#define MAX_FILES 10
+#define MAX_FILENAME_LEN 20
+
+struct file {
+    char name[MAX_FILENAME_LEN];
+};
+
+struct directory {
+    char name[MAX_FILENAME_LEN];
+    struct file files[MAX_FILES];
+    int num_files;
+};
+
+struct user {
+    char name[MAX_FILENAME_LEN];
+    struct directory directory;
+};
+
+struct users {
+    struct user users[MAX_USERS];
+    int num_users;
+};
+
+void create_user(struct users *users, char *name);
+void create_file(struct users *users, char *username, char *filename);
+void list_files(struct users *users, char *username);
+
+int main() {
+    struct users users = {0};
+    create_user(&users, "user1");
+    create_user(&users, "user2");
+    create_user(&users, "user3");
+    create_file(&users, "user1", "file1.txt");
+    create_file(&users, "user1", "file2.txt");
+    create_file(&users, "user1", "file3.txt");
+    create_file(&users, "user2", "file4.txt");
+    create_file(&users, "user2", "file5.txt");
+    create_file(&users, "user3", "file6.txt");
+    list_files(&users, "user1");
+    list_files(&users, "user2");
+    list_files(&users, "user3");
+    return 0;
+}
+
+void create_user(struct users *users, char *name) {
+    if (users->num_users < MAX_USERS) {
+        struct user user = {0};
+        strcpy(user.name, name);
+        users->users[users->num_users++] = user;
+        printf("Created user %s\n", name);
+    } else {
+        printf("Maximum number of users reached\n");
+    }
+}
+
+void create_file(struct users *users, char *username, char *filename) {
+    struct user *user = NULL;
+    int i;
+    for (i = 0; i < users->num_users; i++) {
+        if (strcmp(users->users[i].name, username) == 0) {
+            user = &users->users[i];
+            break;
+        }
+    }
+    if (user == NULL) {
+        printf("User %s not found\n", username);
+        return;
+    }
+    if (user->directory.num_files < MAX_FILES) {
+        struct file file = {0};
+        strcpy(file.name, filename);
+        user->directory.files[user->directory.num_files++] = file;
+        printf("Created file %s for user %s\n", filename, username);
+    } else {
+        printf("Maximum number of files reached for user %s\n", username);
+    }
+}
+
+void list_files(struct users *users, char *username) {
+    struct user *user = NULL;
+    int i, j;
+    for (i = 0; i < users->num_users; i++) {
+        if (strcmp(users->users[i].name, username) == 0) {
+            user = &users->users[i];
+            break;
+        }
+    }
+    if (user == NULL) {
+        printf("User %s not found\n", username);
+        return;
+    }
+    printf("Files for user %s:\n", username);
+    for (j = 0; j < user->directory.num_files; j++) {
+        printf("%s\n", user->directory.files[j].name);
+    }
+}
