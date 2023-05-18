@@ -1,44 +1,256 @@
-#include<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define N 5  // number of philosophers
+
+#define THINKING 0
+#define HUNGRY 1
+#define EATING 2
+
+int state[N];  // state of each philosopher
+pthread_mutex_t mutex;
+pthread_cond_t cond[N];  // one condition variable for each philosopher
+
+void test(int i);
+void pickup_forks(int i);
+void return_forks(int i);
+void *philosopher(void *arg);
 
 int main() {
-    int partitions[] = {300, 600, 350, 200, 750, 125};  // memory partitions
-    int n = sizeof(partitions) / sizeof(partitions[0]);  // number of partitions
-    int processes[] = {115, 500, 358, 200, 375};  // processes to be allocated
-    int m = sizeof(processes) / sizeof(processes[0]);  // number of processes
+    int i;
+    pthread_t tid[N];
 
-    int allocated[m];  // array to store allocated partition indexes
-
-    // initialize allocated array with -1
-    for (int i = 0; i < m; i++) {
-        allocated[i] = -1;
+    // initialize mutex and condition variables
+    pthread_mutex_init(&mutex, NULL);
+    for (i = 0; i < N; i++) {
+        pthread_cond_init(&cond[i], NULL);
     }
 
-    // allocate memory blocks using worst-fit algorithm
-    for (int i = 0; i < m; i++) {
-        int index = -1;
-        for (int j = 0; j < n; j++) {
-            if (partitions[j] >= processes[i]) {
-                if (index == -1 || partitions[j] > partitions[index]) {
-                    index = j;
-                }
-            }
-        }
-        if (index != -1) {
-            allocated[i] = index;
-            partitions[index] -= processes[i];
-        }
+    // create philosopher threads
+    for (i = 0; i < N; i++) {
+        pthread_create(&tid[i], NULL, philosopher, (void *)(intptr_t)i);
     }
 
-    // print allocation table
-    printf("Process No.\tProcess Size\tAllocated Partition\n");
-    for (int i = 0; i < m; i++) {
-        printf("%d\t\t%d KB\t\t", i+1, processes[i]);
-        if (allocated[i] != -1) {
-            printf("%d\n", allocated[i]+1);
-        } else {
-            printf("Not Allocated\n");
-        }
+    // join philosopher threads
+    for (i = 0; i < N; i++) {
+        pthread_join(tid[i], NULL);
+    }
+
+    // destroy mutex and condition variables
+    pthread_mutex_destroy(&mutex);
+    for (i = 0; i < N; i++) {
+        pthread_cond_destroy(&cond[i]);
     }
 
     return 0;
 }
+
+void test(int i) {
+    if (state[i] == HUNGRY && state[(i+4) % N] != EATING && state[(i+1) % N] != EATING) {
+        state[i] = EATING;
+        printf("Philosopher %d is EATING\n", i+1);
+        pthread_cond_signal(&cond[i]);
+    }
+}
+
+void pickup_forks(int i) {
+    pthread_mutex_lock(&mutex);
+    state[i] = HUNGRY;
+    printf("Philosopher %d is HUNGRY\n", i+1);
+    test(i);
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_wait(&cond[i], &mutex);
+}
+
+void return_forks(int i) {
+    pthread_mutex_lock(&mutex);
+    state[i] = THINKING;
+    printf("Philosopher %d is THINKING\n", i+1);
+    test((i+4) % N);
+    test((i+1) % N);
+    pthread_mutex_unlock(&mutex);
+}
+
+void *philosopher(void *arg) {
+    int i = (intptr_t)arg;
+    while (1) {
+        printf("Philosopher %d is THINKING\n", i+1);
+        sleep(2);
+        pickup_forks(i);
+        sleep(1);
+        return_forks(i);
+    }
+    return NULL;
+}#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define N 5  // number of philosophers
+
+#define THINKING 0
+#define HUNGRY 1
+#define EATING 2
+
+int state[N];  // state of each philosopher
+pthread_mutex_t mutex;
+pthread_cond_t cond[N];  // one condition variable for each philosopher
+
+void test(int i);
+void pickup_forks(int i);
+void return_forks(int i);
+void *philosopher(void *arg);
+
+int main() {
+    int i;
+    pthread_t tid[N];
+
+    // initialize mutex and condition variables
+    pthread_mutex_init(&mutex, NULL);
+    for (i = 0; i < N; i++) {
+        pthread_cond_init(&cond[i], NULL);
+    }
+
+    // create philosopher threads
+    for (i = 0; i < N; i++) {
+        pthread_create(&tid[i], NULL, philosopher, (void *)(intptr_t)i);
+    }
+
+    // join philosopher threads
+    for (i = 0; i < N; i++) {
+        pthread_join(tid[i], NULL);
+    }
+
+    // destroy mutex and condition variables
+    pthread_mutex_destroy(&mutex);
+    for (i = 0; i < N; i++) {
+        pthread_cond_destroy(&cond[i]);
+    }
+
+    return 0;
+}
+
+void test(int i) {
+    if (state[i] == HUNGRY && state[(i+4) % N] != EATING && state[(i+1) % N] != EATING) {
+        state[i] = EATING;
+        printf("Philosopher %d is EATING\n", i+1);
+        pthread_cond_signal(&cond[i]);
+    }
+}
+
+void pickup_forks(int i) {
+    pthread_mutex_lock(&mutex);
+    state[i] = HUNGRY;
+    printf("Philosopher %d is HUNGRY\n", i+1);
+    test(i);
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_wait(&cond[i], &mutex);
+}
+
+void return_forks(int i) {
+    pthread_mutex_lock(&mutex);
+    state[i] = THINKING;
+    printf("Philosopher %d is THINKING\n", i+1);
+    test((i+4) % N);
+    test((i+1) % N);
+    pthread_mutex_unlock(&mutex);
+}
+
+void *philosopher(void *arg) {
+    int i = (intptr_t)arg;
+    while (1) {
+        printf("Philosopher %d is THINKING\n", i+1);
+        sleep(2);
+        pickup_forks(i);
+        sleep(1);
+        return_forks(i);
+    }
+    return NULL;
+}#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define N 5  // number of philosophers
+
+#define THINKING 0
+#define HUNGRY 1
+#define EATING 2
+
+int state[N];  // state of each philosopher
+pthread_mutex_t mutex;
+pthread_cond_t cond[N];  // one condition variable for each philosopher
+
+void test(int i);
+void pickup_forks(int i);
+void return_forks(int i);
+void *philosopher(void *arg);
+
+int main() {
+    int i;
+    pthread_t tid[N];
+
+    // initialize mutex and condition variables
+    pthread_mutex_init(&mutex, NULL);
+    for (i = 0; i < N; i++) {
+        pthread_cond_init(&cond[i], NULL);
+    }
+
+    // create philosopher threads
+    for (i = 0; i < N; i++) {
+        pthread_create(&tid[i], NULL, philosopher, (void *)(intptr_t)i);
+    }
+
+    // join philosopher threads
+    for (i = 0; i < N; i++) {
+        pthread_join(tid[i], NULL);
+    }
+
+    // destroy mutex and condition variables
+    pthread_mutex_destroy(&mutex);
+    for (i = 0; i < N; i++) {
+        pthread_cond_destroy(&cond[i]);
+    }
+
+    return 0;
+}
+
+void test(int i) {
+    if (state[i] == HUNGRY && state[(i+4) % N] != EATING && state[(i+1) % N] != EATING) {
+        state[i] = EATING;
+        printf("Philosopher %d is EATING\n", i+1);
+        pthread_cond_signal(&cond[i]);
+    }
+}
+
+void pickup_forks(int i) {
+    pthread_mutex_lock(&mutex);
+    state[i] = HUNGRY;
+    printf("Philosopher %d is HUNGRY\n", i+1);
+    test(i);
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_wait(&cond[i], &mutex);
+}
+
+void return_forks(int i) {
+    pthread_mutex_lock(&mutex);
+    state[i] = THINKING;
+    printf("Philosopher %d is THINKING\n", i+1);
+    test((i+4) % N);
+    test((i+1) % N);
+    pthread_mutex_unlock(&mutex);
+}
+
+void *philosopher(void *arg) {
+    int i = (intptr_t)arg;
+    while (1) {
+        printf("Philosopher %d is THINKING\n", i+1);
+        sleep(2);
+        pickup_forks(i);
+        sleep(1);
+        return_forks(i);
+    }
+    return NULL;
+}V
